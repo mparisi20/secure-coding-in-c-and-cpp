@@ -1,2 +1,5 @@
+# ignore binaries used only for local testing
+
 *.exe
+
 *.o
