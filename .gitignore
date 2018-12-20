@@ -1,5 +1,4 @@
 # ignore binaries used only for local testing
 
-*.exe
+*.bak
 
-*.o
