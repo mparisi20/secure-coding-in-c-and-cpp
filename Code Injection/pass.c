@@ -23,13 +23,6 @@ int main(void)
 		puts("Access granted");
 }
 
-/* 
-I am using 32-bit MinGW with GCC 6.3.0 on windows 10
-
-
-
-*/
-
 // following Linux exploit from the book
 
 /*
