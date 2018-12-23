@@ -4,20 +4,38 @@
 
 int main(void)
 {
-	char *envstr; // represents the latest return value of getenv()
+	const char *envstr; // represents the latest return value of getenv()
 	char *tmpvar; // saved TMP string
 	char *tempvar; // saved TEMP string
 	
-	// get and store "TMP"'s value
+	// get and store "TMP"'s value, with robust error checking
 	envstr = getenv("TMP");
-	if (!envstr) return -1;
+	if (!envstr) {
+		puts("getenv failed: no match found");
+		return -1;
+	}
 	tmpvar = strdup(envstr);
+	if (!tmpvar) {
+		puts("strdup failed.");
+		return -1;
+	}
 	printf("TMP = %s\n", tmpvar);
 	
-	// get and store "TEMP"'s value
+	// get and store "TEMP"'s value, with robust error checking
 	envstr = getenv("TEMP");
-	if (!envstr) return -1;
+	if (!envstr) {
+		puts("getenv failed: no match found");
+		free(tmpvar);
+		tempvar = NULL;
+		return -1;
+	}
 	tempvar = strdup(envstr);
+	if (!tempvar) {
+		puts("strdup failed.");
+		free(tmpvar);
+		tmpvar = NULL;
+		return -1;
+	}
 	printf("TEMP = %s\n", tempvar);
 
 	if (strcmp(tmpvar, tempvar) == 0) {
@@ -33,5 +51,7 @@ int main(void)
 	  }
 	}
 	free(tempvar); // caller is responsible for freeing memory allocated by strdup
+	tempvar = NULL;
 	free(tmpvar);
+	tmpvar = NULL;
 }
