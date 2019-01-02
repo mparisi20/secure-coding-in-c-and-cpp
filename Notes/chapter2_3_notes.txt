@@ -1,0 +1,31 @@
+--restrict qualifier means "I, along with other pointers derived from me, am the only pointer to the memory block that I point to" (no pointer aliasing). But the restricted pointers may point to different parts of a larger structure
+ -allows compiler to make assumptions that aid in optimizing the assembly code
+
+ --use a load --> update --> store pattern when working with memory transformations (don't mix math with loads)
+
+--never use gets()... use C11 alternatives such as getchar() and fgets(), but make sure to use them correctly (use sizeof destination buffer as a limit to what you can write... you can still keep reading and tally up the characters that couldn't fit if necessary). gets_s comes from Annex K C11, but fgets is just as good and won't abort the program if you don't change the runtime constraint handler
+
+--getline(buffer, bufsize, instream) only works with buffers allocated with malloc. This is because getline may need to realloc the buffer. You can't just give it an array. If passed a NULL ptr for buffer, getline will initialize this ptr to dyanimally allocated destination buffer. The CALLER is responsible for freeing this memory. Since getline allocates memory dynamically, it uses the heap; therefore, an attacker can't use getline in a buffer overflow exploit to corrupt the stack.
+
+--gets(), fgets(), and gets_s() can write either to the stack or heap. In contrast, getline() and getdelim() must receive ptrs to dynamically allocated buffers, which use the heap.
+
+--BSD's strlcpy(dest, src, size) is basically a fixed strncpy. It puts a null byte in the last element of dest if src is too big, and it doesn't zero out bytes in dest is src is shorter than size
+
+--BIOS and UEFI are proprietary boot software
+
+1/2/19
+-Calls to strlen() are slow and can be replaced with calls to __builtin_object_size(ptr, type) when possible (objsize <= BUF_SIZE)
+-With _FORTIFY_SOURCE, gcc turns strcpy() into __builtin___strcpy_chk(), but only if the destination buffer size is known. If you don't know the size of the destination buffer, there's no check that can be made to prevent buffer overflow
+-Stack canaries provide weak runtime protection: they do not prevent BOs, they just detect them when they occur. A stack canary only notices buffer overflows from sequential writes to strings, because they have to overwrite the canary before that can get to the protected data. If there's some way for the exploit to get directly to the protected region, the canary is useless
+ASLR = address space layout randomization
+
+Chapter 3: pointer subterfuge
+  -Exploits can also use the fundamentals of BO and stack smashing to modify function/object pointers on the stack instead of targeting the return address
+-The BSS segment stores the names of uninitialized global variables; Since they're uninitialized, the bss segment doesn't take up any space in the object file. The size that it needs to be allocated is simply recorded in the header. (just the sum of all the static variable sizes. This saves space by avoiding the storage of whatever garbage values are inside the uninitialized variables at first.
+-Using static within a function allows you the allocate variables in the .data/.bss sections (single allocation, data preserved across function calls), while still limiting their scope to within the function they were declared in.
+-Use .data, .bss for static (global or local) data; stack for local variables, function arguments, return addresses, etc; heap for dynamically allocated data
+
+-Function calls using a dereferenced function ptr in C translate to the FF 15 opcode/addressing mode in x86, followed by the 4-byte addr of the function ptr… "absolute indirect", bc you're using the function ptr to indirectly access the addr of the function. Calling a function statically just compiles to the "absolute direct" (opcode E8, call) addressing mode, followed by 4 bytes representing the PC-relative displacement between the next instruction after the call and the subroutine being called (review from CSAPP)
+
+
+
